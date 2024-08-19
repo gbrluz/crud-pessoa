@@ -14,21 +14,28 @@ public class Endereco {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(nullable = false)
+    @Column
     private String rua;
 
-    @Column(nullable = false)
+    @Column
     private String numero;
 
-    @Column(nullable = false)
+    @Column
     private String bairro;
 
-    @Column(nullable = false)
+    @Column
     private String cidade;
 
-    @Column(nullable = false)
+    @Column
     private String estado;
 
-    @Column(nullable = false)
+    @Column
     private String cep;
+
+    @Column
+    private boolean principal;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "pessoa_id")
+    private Pessoa pessoa;
 }
