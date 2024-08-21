@@ -8,6 +8,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
@@ -18,29 +19,30 @@ public class PessoaController {
     private PessoaService pessoaService;
 
     @GetMapping
-    public Page<PessoaResponseDTO> listarTodos(Pageable pageable) {
-        return pessoaService.listarTodos(pageable);
+    public ResponseEntity<Page<PessoaResponseDTO>> listarTodos(Pageable pageable) {
+        return ResponseEntity.ok(pessoaService.listarTodos(pageable));
     }
 
     @GetMapping("/{id}")
-    public PessoaResponseDTO obterPorId(@PathVariable Long id) {
-        return pessoaService.obterPorId(id);
+    public ResponseEntity<PessoaResponseDTO> obterPorId(@PathVariable Long id) {
+        return ResponseEntity.ok(pessoaService.obterPorId(id));
     }
 
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
-    public PessoaResponseDTO criarPessoa(@RequestBody PessoaDTO pessoaDTO) {
-        return pessoaService.criarPessoa(pessoaDTO);
+    public ResponseEntity<PessoaResponseDTO> criarPessoa(@RequestBody PessoaDTO pessoaDTO) {
+        return ResponseEntity.ok(pessoaService.criarPessoa(pessoaDTO));
     }
 
     @PutMapping("/{id}")
-    public PessoaResponseDTO atualizarPessoa(@PathVariable Long id, @RequestBody PessoaDTO pessoaDTO) {
-        return pessoaService.atualizarPessoa(id, pessoaDTO);
+    public ResponseEntity<PessoaResponseDTO> atualizarPessoa(@PathVariable Long id, @RequestBody PessoaDTO pessoaDTO) {
+        return ResponseEntity.ok(pessoaService.atualizarPessoa(id, pessoaDTO));
     }
 
     @DeleteMapping("/{id}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
-    public void excluirPessoa(@PathVariable Long id) {
+    public ResponseEntity<Void> excluirPessoa(@PathVariable Long id) {
         pessoaService.excluirPessoa(id);
+        return ResponseEntity.noContent().build();
     }
 }

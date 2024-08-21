@@ -9,14 +9,19 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
+import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.web.PageableHandlerMethodArgumentResolver;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
+import org.springframework.transaction.annotation.Transactional;
 
+import java.util.ArrayList;
 import java.util.Collections;
 
 import static org.hamcrest.Matchers.hasSize;
@@ -26,7 +31,9 @@ import static org.mockito.Mockito.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
-@ExtendWith(MockitoExtension.class)
+@SpringBootTest
+@AutoConfigureMockMvc
+@Transactional
 class PessoaControllerTest {
 
     private MockMvc mockMvc;
@@ -42,20 +49,24 @@ class PessoaControllerTest {
 
     @BeforeEach
     void setUp() {
-        mockMvc = MockMvcBuilders.standaloneSetup(pessoaController).build();
+        mockMvc = MockMvcBuilders.standaloneSetup(pessoaController)
+                .setCustomArgumentResolvers(new PageableHandlerMethodArgumentResolver())
+                .build();
 
         pessoaResponseDTO = new PessoaResponseDTO();
         pessoaResponseDTO.setId(1L);
         pessoaResponseDTO.setNome("Gabriel");
+        pessoaResponseDTO.setCpf("12345678900");
 
         pessoaDTO = new PessoaDTO();
         pessoaDTO.setNome("Gabriel");
+        pessoaDTO.setCpf("12345678900");
     }
 
     @Test
     void listarTodosSuccess() throws Exception {
         Pageable pageable = PageRequest.of(0, 10);
-        Page<PessoaResponseDTO> pessoaPage = new PageImpl<>(Collections.singletonList(pessoaResponseDTO));
+        Page<PessoaResponseDTO> pessoaPage = new PageImpl<>(new ArrayList<>(Collections.singletonList(pessoaResponseDTO)), pageable, 1);
 
         when(pessoaService.listarTodos(any(Pageable.class))).thenReturn(pessoaPage);
 
@@ -89,8 +100,9 @@ class PessoaControllerTest {
         mockMvc.perform(post("/api/pessoas")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{\"nome\":\"Gabriel\",\"cpf\":\"12345678900\"}"))
-                .andExpect(status().isCreated())
-                .andExpect(jsonPath("$.nome").value("Gabriel"));
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.nome").value("Gabriel"))
+                .andExpect(jsonPath("$.cpf").value("12345678900"));
 
         verify(pessoaService, times(1)).criarPessoa(any(PessoaDTO.class));
     }
