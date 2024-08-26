@@ -22,13 +22,11 @@ public class PessoaService {
     @Autowired
     private PessoaRepository pessoaRepository;
 
-    @Transactional(readOnly = true)
     public Page<PessoaResponseDTO> listarTodos(Pageable pageable) {
         return pessoaRepository.findAll(pageable)
                 .map(this::convertToResponseDTO);
     }
 
-    @Transactional(readOnly = true)
     public PessoaResponseDTO obterPorId(Long id) {
         Pessoa pessoa = pessoaRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Pessoa não encontrada"));

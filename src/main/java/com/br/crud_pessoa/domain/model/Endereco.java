@@ -5,7 +5,6 @@ import lombok.Getter;
 import lombok.Setter;
 
 @Entity(name = "endereco")
-@Table(name = "endereco")
 @Getter
 @Setter
 public class Endereco {
@@ -14,25 +13,18 @@ public class Endereco {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column
     private String rua;
 
-    @Column
     private String numero;
 
-    @Column
     private String bairro;
 
-    @Column
     private String cidade;
 
-    @Column
     private String estado;
 
-    @Column
     private String cep;
 
-    @Column
     private boolean principal;
 
     @ManyToOne(fetch = FetchType.LAZY)

@@ -1,5 +1,6 @@
 package com.br.crud_pessoa.domain.model.dto;
 
+import lombok.Builder;
 import lombok.Getter;
 import lombok.Setter;
 

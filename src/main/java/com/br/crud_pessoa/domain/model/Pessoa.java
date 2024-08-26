@@ -1,6 +1,7 @@
 package com.br.crud_pessoa.domain.model;
 
 import jakarta.persistence.*;
+import jakarta.validation.constraints.NotBlank;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -9,7 +10,6 @@ import java.time.Period;
 import java.util.List;
 
 @Entity (name = "pessoa")
-@Table (name = "pessoa")
 @Getter
 @Setter
 public class Pessoa {
@@ -18,13 +18,12 @@ public class Pessoa {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(nullable = false)
+    @NotBlank
     private String nome;
 
-    @Column
     private LocalDate dataNascimento;
 
-    @Column(nullable = false, unique = true)
+    @NotBlank
     private String cpf;
 
     @OneToMany(mappedBy = "pessoa", cascade = CascadeType.ALL)
