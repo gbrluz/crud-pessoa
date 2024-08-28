@@ -5,27 +5,5 @@ import lombok.Builder;
 import lombok.Getter;
 import lombok.Setter;
 
-@Setter
-@Getter
-public class EnderecoDTO {
-    @NotBlank
-    private String rua;
+public record EnderecoDTO(String rua, String numero, String bairro, String cidade, String estado, String cep) {}
 
-    @NotBlank
-    private String numero;
-
-    @NotBlank
-    private String bairro;
-
-    @NotBlank
-    private String cidade;
-
-    @NotBlank
-    private String estado;
-
-    @NotBlank
-    private String cep;
-
-    @NotBlank
-    private boolean principal;
-}
