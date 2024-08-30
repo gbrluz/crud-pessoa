@@ -41,6 +41,10 @@ public class PessoaService {
 
     @Transactional
     public PessoaResponseDTO criarPessoa(PessoaDTO pessoaDTO) {
+        if (pessoaRepository.existsByCpf(pessoaDTO.cpf())) {
+            throw new IllegalArgumentException("CPF já cadastrado");
+        }
+
         Pessoa pessoa = new Pessoa();
         pessoa.setNome(pessoaDTO.nome());
         pessoa.setCpf(pessoaDTO.cpf());

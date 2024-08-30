@@ -3,6 +3,7 @@ package com.br.crud_pessoa.v1.controller;
 import com.br.crud_pessoa.domain.model.dto.EnderecoDTO;
 import com.br.crud_pessoa.domain.model.dto.EnderecoResponseDTO;
 import com.br.crud_pessoa.v1.service.EnderecoService;
+import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -21,7 +22,7 @@ public class EnderecoController {
     private EnderecoService enderecoService;
 
     @PostMapping
-    public ResponseEntity<EnderecoResponseDTO> criarEndereco(@RequestBody EnderecoDTO enderecoDTO) {
+    public ResponseEntity<EnderecoResponseDTO> criarEndereco(@Valid @RequestBody EnderecoDTO enderecoDTO) {
         EnderecoResponseDTO enderecoCriado = enderecoService.criarEndereco(enderecoDTO);
         URI location = ServletUriComponentsBuilder
                 .fromCurrentRequest()

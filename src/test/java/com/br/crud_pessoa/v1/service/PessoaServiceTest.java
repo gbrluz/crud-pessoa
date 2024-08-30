@@ -1,10 +1,13 @@
 package com.br.crud_pessoa.v1.service;
 
+import com.br.crud_pessoa.domain.model.Endereco;
 import com.br.crud_pessoa.domain.model.Pessoa;
 import com.br.crud_pessoa.domain.model.dto.PessoaDTO;
 import com.br.crud_pessoa.domain.model.dto.PessoaResponseDTO;
 import com.br.crud_pessoa.domain.repository.PessoaRepository;
 import com.br.crud_pessoa.exception.ResourceNotFoundException;
+import com.br.crud_pessoa.stub.EnderecoStub;
+import com.br.crud_pessoa.stub.PessoaStub;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -16,13 +19,10 @@ import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 
-import java.time.LocalDate;
-import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Optional;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
@@ -37,20 +37,13 @@ class PessoaServiceTest {
     private Pessoa pessoa;
     private PessoaDTO pessoaDTO;
 
+    private Endereco endereco;
+
     @BeforeEach
     void setUp() {
-        pessoa = new Pessoa();
-        pessoa.setId(1L);
-        pessoa.setNome("Gabriel");
-        pessoa.setCpf("12345678900");
-        pessoa.setDataNascimento(LocalDate.of(1999, 2, 13));
-        pessoa.setEnderecos(new ArrayList<>());
-
-        pessoaDTO = new PessoaDTO();
-        pessoaDTO.setNome("Gabriel");
-        pessoaDTO.setCpf("12345678900");
-        pessoaDTO.setDataNascimento(LocalDate.of(1990, 1, 1));
-        pessoaDTO.setEnderecos(Collections.emptyList());
+        pessoa = PessoaStub.criarPessoaStub();
+        pessoaDTO = PessoaStub.criarPessoaDTOStub();
+        endereco = EnderecoStub.criarEnderecoStub();
     }
 
     @Test
@@ -70,7 +63,7 @@ class PessoaServiceTest {
 
         PessoaResponseDTO result = pessoaService.obterPorId(1L);
 
-        assertEquals("Gabriel", result.getNome());
+        assertEquals("Gabriel", result.nome());
         verify(pessoaRepository, times(1)).findById(1L);
     }
 
@@ -83,14 +76,18 @@ class PessoaServiceTest {
 
     @Test
     void criarPessoaSuccess() {
-        when(pessoaRepository.existsByCpf(anyString())).thenReturn(false);
+        when(pessoaRepository.existsByCpf("12345678900")).thenReturn(false);
         when(pessoaRepository.save(any(Pessoa.class))).thenReturn(pessoa);
 
-        PessoaResponseDTO result = pessoaService.criarPessoa(pessoaDTO);
+        PessoaResponseDTO responseDTO = pessoaService.criarPessoa(pessoaDTO);
 
-        assertEquals("Gabriel", result.getNome());
-        verify(pessoaRepository, times(1)).existsByCpf(pessoaDTO.getCpf());
-        verify(pessoaRepository, times(1)).save(any(Pessoa.class));
+        assertNotNull(responseDTO);
+        assertEquals(pessoaDTO.nome(), responseDTO.nome());
+        assertEquals(pessoaDTO.cpf(), responseDTO.cpf());
+        assertEquals(pessoaDTO.dataNascimento(), responseDTO.dataNascimento());
+
+        verify(pessoaRepository).existsByCpf("12345678900");
+        verify(pessoaRepository).save(any(Pessoa.class));
     }
 
     @Test
@@ -98,7 +95,7 @@ class PessoaServiceTest {
         when(pessoaRepository.existsByCpf(anyString())).thenReturn(true);
 
         assertThrows(IllegalArgumentException.class, () -> pessoaService.criarPessoa(pessoaDTO));
-        verify(pessoaRepository, times(1)).existsByCpf(pessoaDTO.getCpf());
+        verify(pessoaRepository, times(1)).existsByCpf(pessoaDTO.cpf());
     }
 
     @Test
@@ -108,7 +105,7 @@ class PessoaServiceTest {
 
         PessoaResponseDTO result = pessoaService.atualizarPessoa(1L, pessoaDTO);
 
-        assertEquals("Gabriel", result.getNome());
+        assertEquals("Gabriel", result.nome());
         verify(pessoaRepository, times(1)).findById(1L);
         verify(pessoaRepository, times(1)).save(any(Pessoa.class));
     }

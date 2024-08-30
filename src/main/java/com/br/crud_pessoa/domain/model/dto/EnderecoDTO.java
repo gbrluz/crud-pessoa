@@ -5,5 +5,10 @@ import lombok.Builder;
 import lombok.Getter;
 import lombok.Setter;
 
-public record EnderecoDTO(String rua, String numero, String bairro, String cidade, String estado, String cep) {}
+public record EnderecoDTO(@NotBlank(message = "Rua não pode estar em branco") String rua,
+                          String numero,
+                          String bairro,
+                          String cidade,
+                          String estado,
+                          String cep) {}
 

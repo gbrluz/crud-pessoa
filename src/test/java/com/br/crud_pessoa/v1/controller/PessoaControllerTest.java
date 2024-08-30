@@ -1,133 +1,126 @@
 package com.br.crud_pessoa.v1.controller;
 
+import com.br.crud_pessoa.domain.model.Endereco;
+import com.br.crud_pessoa.domain.model.Pessoa;
 import com.br.crud_pessoa.domain.model.dto.PessoaDTO;
-import com.br.crud_pessoa.domain.model.dto.PessoaResponseDTO;
-import com.br.crud_pessoa.v1.service.PessoaService;
+import com.br.crud_pessoa.domain.repository.EnderecoRepository;
+import com.br.crud_pessoa.domain.repository.PessoaRepository;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.InjectMocks;
-import org.mockito.Mock;
-import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageImpl;
-import org.springframework.data.domain.PageRequest;
-import org.springframework.data.domain.Pageable;
-import org.springframework.data.web.PageableHandlerMethodArgumentResolver;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
-import org.springframework.test.web.servlet.setup.MockMvcBuilders;
-import org.springframework.transaction.annotation.Transactional;
 
-import java.util.ArrayList;
-import java.util.Collections;
+import java.time.LocalDate;
+import java.util.List;
 
 import static org.hamcrest.Matchers.hasSize;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyLong;
-import static org.mockito.Mockito.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @SpringBootTest
 @AutoConfigureMockMvc
-@Transactional
-class PessoaControllerTest {
+public class PessoaControllerTest {
 
+    @Autowired
     private MockMvc mockMvc;
 
-    @Mock
-    private PessoaService pessoaService;
+    @Autowired
+    private ObjectMapper objectMapper;
 
-    @InjectMocks
-    private PessoaController pessoaController;
+    @Autowired
+    private PessoaRepository pessoaRepository;
 
-    private PessoaResponseDTO pessoaResponseDTO;
-    private PessoaDTO pessoaDTO;
+    @Autowired
+    private EnderecoRepository enderecoRepository;
 
     @BeforeEach
     void setUp() {
-        mockMvc = MockMvcBuilders.standaloneSetup(pessoaController)
-                .setCustomArgumentResolvers(new PageableHandlerMethodArgumentResolver())
-                .build();
-
-        pessoaResponseDTO = new PessoaResponseDTO();
-        pessoaResponseDTO.setId(1L);
-        pessoaResponseDTO.setNome("Gabriel");
-        pessoaResponseDTO.setCpf("12345678900");
-
-        pessoaDTO = new PessoaDTO();
-        pessoaDTO.setNome("Gabriel");
-        pessoaDTO.setCpf("12345678900");
+        pessoaRepository.deleteAll();
+        enderecoRepository.deleteAll();
     }
 
     @Test
-    void listarTodosSuccess() throws Exception {
-        Pageable pageable = PageRequest.of(0, 10);
-        Page<PessoaResponseDTO> pessoaPage = new PageImpl<>(new ArrayList<>(Collections.singletonList(pessoaResponseDTO)), pageable, 1);
+    void givenPessoasExist_whenListarTodos_thenReturnPagedPessoas() throws Exception {
+        Endereco endereco1 = enderecoRepository.save(new Endereco("Rua 1", "100", "Bairro 1", "Cidade 1", "Estado 1", "12345-678"));
+        Endereco endereco2 = enderecoRepository.save(new Endereco("Rua 2", "200", "Bairro 2", "Cidade 2", "Estado 2", "23456-789"));
 
-        when(pessoaService.listarTodos(any(Pageable.class))).thenReturn(pessoaPage);
+        Pessoa pessoa1 = new Pessoa("Gabriel",  LocalDate.of(1990, 1, 1), "405.360.232-71", List.of(endereco1.getId()));
+        Pessoa pessoa2 = new Pessoa("Marcelo",  LocalDate.of(1990, 1, 1), "887.238.287-49", List.of(endereco2.getId()));
+        pessoaRepository.saveAll(List.of(pessoa1, pessoa2));
 
         mockMvc.perform(get("/api/pessoas")
+                        .contentType(MediaType.APPLICATION_JSON)
                         .param("page", "0")
-                        .param("size", "10")
-                        .param("sort", "nome,asc")
-                        .contentType(MediaType.APPLICATION_JSON))
+                        .param("size", "5"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.content", hasSize(1)));
-
-        verify(pessoaService, times(1)).listarTodos(any(Pageable.class));
+                .andExpect(jsonPath("$.content", hasSize(2)))
+                .andExpect(jsonPath("$.content[0].nome").value("Gabriel"))
+                .andExpect(jsonPath("$.content[1].nome").value("Marcelo"))
+                .andExpect(jsonPath("$.content[0].enderecos[0].rua").value("Rua 1"))
+                .andExpect(jsonPath("$.content[1].enderecos[0].rua").value("Rua 2"));
     }
 
     @Test
-    void obterPorIdSuccess() throws Exception {
-        when(pessoaService.obterPorId(anyLong())).thenReturn(pessoaResponseDTO);
-
-        mockMvc.perform(get("/api/pessoas/1")
-                        .contentType(MediaType.APPLICATION_JSON))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.nome").value("Gabriel"));
-
-        verify(pessoaService, times(1)).obterPorId(1L);
-    }
-
-    @Test
-    void criarPessoaSuccess() throws Exception {
-        when(pessoaService.criarPessoa(any(PessoaDTO.class))).thenReturn(pessoaResponseDTO);
+    void givenValidPessoa_whenCreatePessoa_thenReturnCreatedPessoa() throws Exception {
+        Endereco endereco = enderecoRepository.save(new Endereco("Rua 1", "100", "Bairro 1", "Cidade 1", "Estado 1", "12345-678"));
+        PessoaDTO pessoaDTO = new PessoaDTO("Gabriel", "405.360.232-71", LocalDate.of(1990, 1, 1), List.of(endereco.getId()));
 
         mockMvc.perform(post("/api/pessoas")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content("{\"nome\":\"Gabriel\",\"cpf\":\"12345678900\"}"))
+                        .content(objectMapper.writeValueAsString(pessoaDTO)))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.nome").value("Gabriel"))
-                .andExpect(jsonPath("$.cpf").value("12345678900"));
-
-        verify(pessoaService, times(1)).criarPessoa(any(PessoaDTO.class));
+                .andExpect(jsonPath("$.enderecos[0].rua").value("Rua 1"));
     }
 
     @Test
-    void atualizarPessoaSuccess() throws Exception {
-        when(pessoaService.atualizarPessoa(anyLong(), any(PessoaDTO.class))).thenReturn(pessoaResponseDTO);
+    void givenExistingPessoa_whenGetPessoaById_thenReturnPessoa() throws Exception {
+        Endereco endereco = enderecoRepository.save(new Endereco("Rua 1", "100", "Bairro 1", "Cidade 1", "Estado 1", "12345-678"));
+        Pessoa pessoa = new Pessoa("Gabriel",  LocalDate.of(1990, 1, 1), "405.360.232-71", List.of(endereco.getId()));
+        pessoa = pessoaRepository.save(pessoa);
 
-        mockMvc.perform(put("/api/pessoas/1")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content("{\"nome\":\"Gabriel\",\"cpf\":\"12345678900\"}"))
+        mockMvc.perform(get("/api/pessoas/{id}", pessoa.getId())
+                        .contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.nome").value("Gabriel"));
-
-        verify(pessoaService, times(1)).atualizarPessoa(anyLong(), any(PessoaDTO.class));
+                .andExpect(jsonPath("$.nome").value("Gabriel"))
+                .andExpect(jsonPath("$.enderecos[0].rua").value("Rua 1"));
     }
 
     @Test
-    void excluirPessoaSuccess() throws Exception {
-        doNothing().when(pessoaService).excluirPessoa(anyLong());
+    void givenInvalidPessoaId_whenGetPessoaById_thenReturnNotFound() throws Exception {
+        mockMvc.perform(get("/api/pessoas/{id}", 999L)
+                        .contentType(MediaType.APPLICATION_JSON))
+                .andExpect(status().isNotFound());
+    }
 
-        mockMvc.perform(delete("/api/pessoas/1")
+    @Test
+    void givenExistingPessoa_whenUpdatePessoa_thenReturnUpdatedPessoa() throws Exception {
+        Endereco endereco = enderecoRepository.save(new Endereco("Rua 1", "100", "Bairro 1", "Cidade 1", "Estado 1", "12345-678"));
+        Pessoa pessoa = new Pessoa("Gabriel",  LocalDate.of(1990, 1, 1), "405.360.232-71", List.of(endereco.getId()));
+        pessoa = pessoaRepository.save(pessoa);
+
+        PessoaDTO updatedPessoaDTO = new PessoaDTO("Marcelo", "405.360.232-71", LocalDate.of(1990, 1, 1), List.of(endereco.getId()));
+
+        mockMvc.perform(put("/api/pessoas/{id}", pessoa.getId())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(updatedPessoaDTO)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.nome").value("Marcelo"));
+    }
+
+    @Test
+    void givenExistingPessoa_whenDeletePessoa_thenReturnNoContent() throws Exception {
+        Endereco endereco = enderecoRepository.save(new Endereco("Rua 1", "100", "Bairro 1", "Cidade 1", "Estado 1", "12345-678"));
+        Pessoa pessoa = new Pessoa("Gabriel",  LocalDate.of(1990, 1, 1), "405.360.232-71", List.of(endereco.getId()));
+        pessoa = pessoaRepository.save(pessoa);
+
+        mockMvc.perform(delete("/api/pessoas/{id}", pessoa.getId())
                         .contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isNoContent());
-
-        verify(pessoaService, times(1)).excluirPessoa(1L);
     }
 }
